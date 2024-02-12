@@ -1,0 +1,28 @@
+[project]
+name = "panid"
+authors = [{name="Visentin Luca", email="luca.visentin@unito.it"}]
+description = "An utility tool to convert between different gene IDs"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dynamic = ["version"]
+dependencies = [
+    "pandas~=2.0",
+    "colorama~=0.4"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/MrHedmad/panID"
+"Bug Tracker" = "https://github.com/MrHedmad/panID/issues"
+
+[build-system]
+requires = ["flit_core>=3.4"]
+build-backend = "flit_core.buildapi"
+
+[project.scripts]
+panid = "panid.bin:bin"
+
