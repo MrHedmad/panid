@@ -2,6 +2,8 @@ from pathlib import Path
 import sys
 import logging
 
+from panid.panid import panid
+
 log = logging.getLogger(__name__)
 
 def bin(args = None):
@@ -18,6 +20,8 @@ def bin(args = None):
     log.debug(f"Starting PanID with args {args}")
 
     out_stream = args.output.open("w+") if args.output else sys.stdout
-    in_stream = args.input.open("r")
+    in_stream = args.input_file.open("r")
+
+    panid(in_stream, out_stream, conversions = args.conversion_string)
 
 

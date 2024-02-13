@@ -12,7 +12,9 @@ classifiers = [
 dynamic = ["version"]
 dependencies = [
     "pandas~=2.0",
-    "colorama~=0.4"
+    "colorama~=0.4",
+    "tqdm~=4.66",
+    "requests~=2.31"
 ]
 
 [project.urls]
