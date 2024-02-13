@@ -77,7 +77,7 @@ class Conversion:
     def from_string(raw: str) -> Self:
         """Generate a new Conversion from a string
 
-        Conversion synthax is as follows `<from>:<type><symbol><to>:<type>[?<how>]` where:
+        Conversion synthax is as follows `<from>:<type><symbol><to>:<type>` where:
             - `<from>` is the name of the column in the input that has the IDs,
             - `<type>` is the type of the input or output columns, to be chosen
               from the available data types.
