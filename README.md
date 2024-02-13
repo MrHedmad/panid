@@ -1,5 +1,7 @@
 <div align="center">
-![PanID logo](https://github.com/MrHedmad/panID/blob/main/docs/resources/panid_logo.png)
+  
+![PanID logo](https://raw.githubusercontent.com/MrHedmad/panID/main/docs/resources/panid_logo.png)
+
 </div>
 
 Panid is a small tool to convert between different gene IDs.
@@ -42,6 +44,7 @@ options:
 ```
 The only difficult parameter is `conversion_string` that are used to map one ID
 to another.
+By default `panid` prints the output `.csv` to `stdout`.
 
 A conversion string looks like this:
 ```
