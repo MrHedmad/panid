@@ -9,11 +9,11 @@ log = logging.getLogger(__name__)
 def bin(args = None):
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("panid", description="Convert between IDs quickly!")
 
     parser.add_argument("input_file", type=Path, help="An input .csv file to convert")
     parser.add_argument("--output", type=Path, help="An output file to save to")
-    parser.add_argument("conversion_string", help="A conversion string to use", nargs="*")
+    parser.add_argument("conversion_string", help="A conversion string to use", nargs="+")
 
     args = parser.parse_args(args)
 

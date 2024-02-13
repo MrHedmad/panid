@@ -1,25 +1,23 @@
-from panid.panid import Conversion, IdType, MergeMethod
+from panid.panid import Conversion, IdType
 
 conversion_tests = [
     (
-        "ensg:ensembl_gene_id+ensgv:ensembl_gene_id_version",
+        "ensg:ensg+ensgv:ensg_version",
         Conversion(
             "ensg", 
-            IdType.ENSEMBL_GENE_ID,
+            IdType.ENSG,
             "ensgv",
-            IdType.ENSEMBL_GENE_ID_VERSION,
-            MergeMethod.OUTER,
+            IdType.ENSG_VERSION,
             True
         )
     ),
     (
-        "banana:ensembl_gene_id_version>papayalama wow!:ensembl_gene_id?inner",
+        "banana:ensg_version>papayalama wow!:ensg",
         Conversion(
             "banana",
-            IdType.ENSEMBL_GENE_ID_VERSION,
+            IdType.ENSG_VERSION,
             "papayalama wow!",
-            IdType.ENSEMBL_GENE_ID,
-            MergeMethod.INNER,
+            IdType.ENSG,
             False
         )
     )

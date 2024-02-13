@@ -9,6 +9,7 @@ import os
 from io import BytesIO
 import shutil
 from functools import reduce
+from copy import copy
 
 import pandas as pd
 from tqdm import tqdm
@@ -50,14 +51,15 @@ BIOMART_XML_REQUESTS = {
 def lmap(*args, **kwargs):
     return list(map(*args, **kwargs))
 
-
-class MergeMethod(StrEnum):
-    INNER = auto()
-    OUTER = auto()
-
 class IdType(StrEnum):
-    ENSEMBL_GENE_ID = auto()
-    ENSEMBL_GENE_ID_VERSION = auto()
+    ENSG_VERSION = auto()
+    ENSG = auto()
+    ENST_VERSION = auto()
+    ENST = auto()
+    NCBI_GENE_ID = auto()
+    REFSEQ_RNA_ID = auto()
+    HGNC_ID = auto()
+    HGNC_SYMBOL = auto()
 
 class Symbol(Enum):
     ADD = "+"
@@ -69,7 +71,6 @@ class Conversion:
     original_type: IdType
     to: str
     to_type: IdType
-    how: MergeMethod
     additive: bool
 
     @staticmethod
@@ -83,11 +84,8 @@ class Conversion:
             - `<to>` is the name of the output column.
             - `<symbol>` either `+` or `>` to either preserve (`+`) or replace
               `>` the input column.
-            - `<how>` either `inner` or `outer` to control how the column is
-              substituted. If omitted, defaults to `outer`, adding NAs to
-              unmatched IDs.
         """
-        deconstructor = re.compile(r"(.+?):(.+?)(\+|>)(.+?):(.+?)(?:\?(.+?))?$")
+        deconstructor = re.compile(r"(.+?):(.+?)(\+|>)(.+?):(.+?)$")
 
         res = deconstructor.match(raw)
         
@@ -97,7 +95,6 @@ class Conversion:
             symbol = Symbol(res.group(3))
             to = res.group(4)
             to_type = IdType(res.group(5))
-            how = MergeMethod(res.group(6) or "outer")
         except Exception as e:
             log.error(f"Invalid input conversion string: {e}")
 
@@ -106,7 +103,6 @@ class Conversion:
             original_type=original_type,
             to=to,
             to_type=to_type,
-            how=how,
             additive=(symbol == Symbol.ADD)
         )
 
@@ -240,8 +236,11 @@ def retrieve_biomart() -> dict[pd.DataFrame]:
 
     return result
 
+def drop_version(id: str) -> str:
+    return ".".join(id.split(".")[:-1])
+
 def fetch_id_data() -> pd.DataFrame:
-    """Fetch IDs from biomart and r"""
+    """Fetch IDs from biomart"""
     data = retrieve_biomart()
 
     # collapse all the biomart frames
@@ -256,19 +255,51 @@ def fetch_id_data() -> pd.DataFrame:
     # Run some cleanup since the colnames are pretty bad
     merged.rename(
         columns = {
-            "gene_stable_id_version": "ensg",
+            "gene_stable_id_version": "ensg_version",
             "ncbi_gene_(formerly_entrezgene)_id": "ncbi_gene_id",
-            "transcript_stable_id_version": "enst",
+            "transcript_stable_id_version": "enst_version",
             "refseq_mrna_id": "refseq_rna_id"
         },
         inplace=True,
     )
-    print(merged.columns)
 
     # Fuse the `refseq_mrna_id` and `refseq_ncrna_id` columns
     # since they do not conflict
     merged["refseq_rna_id"] = merged["refseq_rna_id"].fillna(merged["refseq_ncrna_id"])
     merged.drop(columns=["refseq_ncrna_id"], inplace=True)
+
+    # bloat the "ensg" column
+    merged["ensg"] = lmap(drop_version, merged["ensg_version"].tolist())
+    merged["enst"] = lmap(drop_version, merged["enst_version"].tolist())
+
+    return merged
+
+
+def panid_convert(input: pd.DataFrame, conversion: Conversion, id_table: pd.DataFrame) -> pd.DataFrame:
+    selection = id_table[[conversion.to_type.value, conversion.original_type.value]]
+    # If the target column (the one to merge) has missing data, it's best to
+    # simply drop the NAs here, since the merge would re-add them.
+    # If we do not, the selection might have entries like this:
+    # col_one col_two
+    #     aaa     bbb
+    #     aaa      NA
+    # (since it derives from a much larger frame), and we would get these
+    # duplicated values in the resulting dataframe.
+    # So, we just drop the NAs in the additional column.
+    selection = selection.dropna(axis=0, subset=conversion.to_type.value)
+    selection = selection.rename(columns = {conversion.original_type.value : conversion.original})
+    selection = selection.drop_duplicates()
+    
+    merged = input.merge(
+        selection,
+        how = "left"
+    )
+    merged = merged.drop_duplicates()
+    
+    if not conversion.additive:
+        merged = merged.drop(columns=[conversion.original])
+
+    merged = merged.rename(columns={conversion.to_type: conversion.to})
 
     return merged
 
@@ -280,4 +311,19 @@ def panid(input_stream: TextIO, output_stream: TextIO, conversions: list[Convers
         saver=lambda conn: fetch_id_data().to_csv(conn, index=False)
     )
 
-    print(cache.data)
+    data: pd.DataFrame = cache.data
+
+    input_data = pd.read_csv(input_stream)
+    conversions = [Conversion.from_string(x) for x in conversions]
+
+    converted_data = input_data
+    for i, conv in enumerate(conversions):
+        log.info(f"Applying conversion {i + 1}...")
+        if conv.original not in converted_data.columns:
+            raise ValueError(f"\t-{conv.original} not in input columns: {input_data.columns}")
+        converted_data = panid_convert(converted_data, conv, copy(data))
+
+    converted_data = converted_data.drop_duplicates()
+
+    converted_data.to_csv(output_stream, index=False)
+
