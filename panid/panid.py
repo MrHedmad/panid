@@ -245,8 +245,6 @@ def fetch_id_data() -> pd.DataFrame:
 
     # collapse all the biomart frames
     frames = data.values()
-    for frame in frames:
-        print(frame.columns)
     merged = reduce(
             lambda x, y: pd.merge(x, y, how="outer", on="gene_stable_id_version"),
             frames
