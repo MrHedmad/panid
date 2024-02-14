@@ -24,11 +24,11 @@ It uses this data to convert between the different IDs relatively quickly.
 You need Python `3.11` or later.
 Install `panid` with:
 ```bash
-pip install git+https://github.com/MrHedmad/panID.git
+pip install git+https://github.com/MrHedmad/panid.git
 ```
 
 ## Usage
-Use `panid -h` to get an overwiew:
+Use `panid -h` to get an overview:
 ```
 usage: panid [-h] [--output OUTPUT] input_file conversion_string [conversion_string ...]
 
