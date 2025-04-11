@@ -11,11 +11,11 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "pandas~=2.0",
-    "colorama~=0.4",
-    "tqdm~=4.66",
-    "requests~=2.31",
-    "pyarrow~=18.0"
+    "pandas",
+    "colorama",
+    "tqdm",
+    "requests",
+    "pyarrow"
 ]
 
 [project.urls]
